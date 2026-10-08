@@ -114,7 +114,7 @@ function Ordre({ a, game, side, annuller, faerdig }: {
   const b = gyldigt ? beregnHandel(game, side, qty, q.price, a.fx, q.currency) : null;
   const reserve = b && ventende && side === 'buy' ? round2(b.total * RESERVE_BUFFER) : null;
   const regelfejl = !b ? 'Skriv et helt antal aktier.' : side === 'buy'
-    ? tjekKoeb(game, st, b.valueDkk, reserve ?? b.total)
+    ? tjekKoeb(game, st, b.total, reserve ?? b.total)
     : tjekSalg(ledige, qty, b.total);
   const udenlandsk = !erDansk(q.currency);
 
@@ -212,7 +212,7 @@ export function Satser({ game }: { game: SpilInfo }) {
         <li><strong>Udenlandske aktier</strong>: {pct(game.fee_int_pct)} af handlens værdi, dog mindst {kr(game.fee_int_min)}.</li>
         <li><strong>Valutatillæg</strong> ved udenlandske aktier: {pct(game.fx_pct)} af handlens værdi – både ved køb og salg.</li>
         <li>Kurtage betales både når du køber, og når du sælger.</li>
-        <li>Du må højst have {kr(graense(game))} ({pct(game.max_pct)} af startkapitalen) investeret i én aktie, regnet ud fra din gennemsnitlige købspris.</li>
+        <li>Du må højst have {kr(graense(game))} ({pct(game.max_pct)} af startkapitalen) investeret i én aktie. Det tæller med, hvad du har betalt inkl. kurtage og valutatillæg.</li>
         <li>Udbytte medregnes ikke i spillet. Ved aktiesplit justeres antallet automatisk.</li>
       </ul>
     </details>

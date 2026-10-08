@@ -169,8 +169,11 @@ describe('handel mens børsen er åben', () => {
     expect(o2).toMatchObject({ status: 'executed', fx_rate: 6.5, value_dkk: 13000, fee_dkk: 49, fx_fee_dkk: 32.5, total_dkk: 13081.5 });
   });
 
-  it('grænsen pr. aktie regnes af startkapitalen og gennemsnitlig købspris', async () => {
-    await kald('ordre', { token, symbol: 'NOVO-B.CO', side: 'buy', qty: 40 }); // 20.000 kr.
+  it('grænsen pr. aktie regnes af startkapitalen og det betalte inkl. kurtage', async () => {
+    // 40 × 500 = 20.000 kr. + 29 kr. kurtage overskrider grænsen på 20.000 kr.
+    expect(await fejl(kald('ordre', { token, symbol: 'NOVO-B.CO', side: 'buy', qty: 40 }))).toMatch(/højst have 20\.000,00 kr\./);
+    await kald('ordre', { token, symbol: 'NOVO-B.CO', side: 'buy', qty: 39 }); // 19.529 kr. inkl. kurtage
+    expect(store.holdingRows[0].invested_dkk).toBe(19529);
     expect(await fejl(kald('ordre', { token, symbol: 'NOVO-B.CO', side: 'buy', qty: 1 }))).toMatch(/højst have 20\.000,00 kr\./);
     await kald('ordre', { token, symbol: 'NOVO-B.CO', side: 'sell', qty: 10 });
     kilde.priser['NOVO-B.CO'] = 1000; // kursen stiger – investeret beløb er stadig købsprisen
@@ -278,7 +281,7 @@ describe('spillets afslutning og lærerens satser', () => {
     const g = await nytSpil();
     const a = (await kald('tilmeld', { code: g.code, nickname: 'Anna' })).token;
     const b = (await kald('tilmeld', { code: g.code, nickname: 'Bo' })).token;
-    await kald('ordre', { token: a, symbol: 'NOVO-B.CO', side: 'buy', qty: 40 });
+    await kald('ordre', { token: a, symbol: 'NOVO-B.CO', side: 'buy', qty: 39 });
     tid = sek(`${DAG}T18:00:00Z`);
     await kald('ordre', { token: b, symbol: 'NOVO-B.CO', side: 'buy', qty: 1 });
     await kald('afslut-spil', { id: g.id });
@@ -321,7 +324,7 @@ describe('spillets afslutning og lærerens satser', () => {
     kilde.splitListe['NOVO-B.CO'] = [{ date: tid + 3600, numerator: 2, denominator: 1 }];
     tid += 7200;
     await cron();
-    expect(store.holdingRows[0]).toMatchObject({ qty: 20, invested_dkk: 5000 });
+    expect(store.holdingRows[0]).toMatchObject({ qty: 20, invested_dkk: 5029 });
     await store.stateSet('split', '');
     await cron();
     expect(store.holdingRows[0].qty).toBe(20);

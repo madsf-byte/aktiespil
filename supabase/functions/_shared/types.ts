@@ -46,7 +46,7 @@ export interface Holding {
   qty: number;
   /** Aktier låst af ventende salgsordrer. */
   qty_reserved: number;
-  /** Antal × gennemsnitlig købspris i kr. (uden kurtage). */
+  /** Antal × gennemsnitlig købspris i kr. inkl. kurtage og valutatillæg. */
   invested_dkk: number;
   /** Tidspunkt (epoch sek.) for køb/seneste split – ældre split ignoreres. */
   split_ts: number;
@@ -80,7 +80,7 @@ export interface Order {
   total_dkk: number | null;
   /** Kontanter reserveret af en ventende købsordre. */
   reserved_dkk: number;
-  /** Anslået værdi (uden kurtage) af en ventende købsordre – tæller med i grænsen pr. aktie. */
+  /** Anslået pris (inkl. kurtage) af en ventende købsordre – tæller med i grænsen pr. aktie. */
   est_value_dkk: number;
   reason: string | null;
 }

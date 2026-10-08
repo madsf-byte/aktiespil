@@ -48,7 +48,7 @@ export function graense(s: Satser): number {
   return round2((s.start_capital * s.max_pct) / 100);
 }
 
-/** Hvor meget mere (uden kurtage) der må investeres i aktien. */
+/** Hvor meget mere (inkl. kurtage) der må investeres i aktien. */
 export function ledigGraense(s: Satser, invested: number, pendingEst: number): number {
   return Math.max(0, round2(graense(s) - invested - pendingEst));
 }
@@ -56,18 +56,22 @@ export function ledigGraense(s: Satser, invested: number, pendingEst: number): n
 export interface KoebStatus {
   /** Ledige kontanter. */
   cash: number;
-  /** Allerede investeret i aktien (antal × gns. købspris). */
+  /** Allerede investeret i aktien (antal × gns. købspris inkl. kurtage). */
   invested: number;
-  /** Anslået værdi af andre ventende køb af samme aktie. */
+  /** Anslået pris (inkl. kurtage) af andre ventende køb af samme aktie. */
   pendingEst: number;
 }
 
 /** Returnerer en fejltekst, eller null hvis købet er tilladt. */
-export function tjekKoeb(s: Satser, st: KoebStatus, valueDkk: number, total: number): string | null {
-  if (total > st.cash + 0.005) {
-    return `Du har ikke nok kontanter. Handlen koster ${kr(total)}, og du har ${kr(st.cash)}.`;
+/**
+ * `pris` er hvad købet koster inkl. kurtage og valutatillæg – det tæller i grænsen pr. aktie.
+ * `kontantKrav` er hvad der skal være på kontoen (større end prisen for ventende ordrer pga. buffer).
+ */
+export function tjekKoeb(s: Satser, st: KoebStatus, pris: number, kontantKrav = pris): string | null {
+  if (kontantKrav > st.cash + 0.005) {
+    return `Du har ikke nok kontanter. Handlen kræver ${kr(kontantKrav)}, og du har ${kr(st.cash)}.`;
   }
-  if (st.invested + st.pendingEst + valueDkk > graense(s) + 0.005) {
+  if (st.invested + st.pendingEst + pris > graense(s) + 0.005) {
     return `Du må højst have ${kr(graense(s))} investeret i én aktie (${pct(s.max_pct)} af startkapitalen). ` +
       `Du kan købe for ${kr(ledigGraense(s, st.invested, st.pendingEst))} mere i denne aktie.`;
   }
@@ -90,7 +94,7 @@ export function maxAntalKoeb(
 ): number {
   const ok = (q: number) => {
     const b = beregnHandel(s, 'buy', q, price, fxRate, currency);
-    return tjekKoeb(s, st, b.valueDkk, round2(b.total * buffer)) === null;
+    return tjekKoeb(s, st, b.total, round2(b.total * buffer)) === null;
   };
   let lo = 0;
   let hi = Math.max(0, Math.floor(st.cash / (price * fxRate)) + 1);
@@ -101,9 +105,9 @@ export function maxAntalKoeb(
   return lo;
 }
 
-/** Beholdning efter et køb. */
-export function efterKoeb(h: Holding, qty: number, valueDkk: number): Holding {
-  return { ...h, qty: h.qty + qty, invested_dkk: round2(h.invested_dkk + valueDkk) };
+/** Beholdning efter et køb – `betalt` er inkl. kurtage og valutatillæg. */
+export function efterKoeb(h: Holding, qty: number, betalt: number): Holding {
+  return { ...h, qty: h.qty + qty, invested_dkk: round2(h.invested_dkk + betalt) };
 }
 
 /** Beholdning efter et salg – investeret beløb falder forholdsmæssigt (gns. købspris). */

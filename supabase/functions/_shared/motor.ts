@@ -107,9 +107,9 @@ export async function laegOrdre(
       }
       let ny: Holding;
       if (side === 'buy') {
-        const fejl = tjekKoeb(game, { cash: p.cash, invested: h.invested_dkk, pendingEst: ventendeKoeb(pending, q.symbol) }, b.valueDkk, b.total);
+        const fejl = tjekKoeb(game, { cash: p.cash, invested: h.invested_dkk, pendingEst: ventendeKoeb(pending, q.symbol) }, b.total);
         if (fejl) throw new ApiFejl(fejl);
-        ny = efterKoeb(h, qty, b.valueDkk);
+        ny = efterKoeb(h, qty, b.total);
         a.cash = round2(p.cash - b.total);
       } else {
         const fejl = tjekSalg(h.qty - h.qty_reserved, qty, b.total);
@@ -128,10 +128,10 @@ export async function laegOrdre(
       o.earliest_at = iso(status.nextOpen);
       if (side === 'buy') {
         const reserve = round2(b.total * RESERVE_BUFFER);
-        const fejl = tjekKoeb(game, { cash: p.cash, invested: h.invested_dkk, pendingEst: ventendeKoeb(pending, q.symbol) }, b.valueDkk, reserve);
+        const fejl = tjekKoeb(game, { cash: p.cash, invested: h.invested_dkk, pendingEst: ventendeKoeb(pending, q.symbol) }, b.total, reserve);
         if (fejl) throw new ApiFejl(fejl);
         o.reserved_dkk = reserve;
-        o.est_value_dkk = b.valueDkk;
+        o.est_value_dkk = b.total;
         a.cash = round2(p.cash - reserve);
       } else {
         const fejl = tjekSalg(h.qty - h.qty_reserved, qty, b.total);
@@ -177,8 +177,8 @@ export async function gennemfoerVentende(m: Motor, game: Game, order: Order): Pr
     let cash: number;
     if (o.side === 'buy') {
       const st = { cash: round2(p.cash + o.reserved_dkk), invested: h.invested_dkk, pendingEst: ventendeKoeb(pending, o.symbol, o.id) };
-      fejl = tjekKoeb(game, st, b.valueDkk, b.total);
-      ny = efterKoeb(h, o.qty, b.valueDkk);
+      fejl = tjekKoeb(game, st, b.total);
+      ny = efterKoeb(h, o.qty, b.total);
       cash = round2(st.cash - b.total);
     } else {
       const fri = { ...h, qty_reserved: Math.max(0, h.qty_reserved - o.qty) };
