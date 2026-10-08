@@ -13,7 +13,7 @@ const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
 const store = new SupabaseStore(db);
 const now = () => Date.now() / 1000;
 const kurser = new Kurser(store, yahoo, now);
-const laererMails = env('TEACHER_EMAILS').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+const admins = env('TEACHER_EMAILS').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -33,13 +33,14 @@ Deno.serve(async (req) => {
       store, kurser, now,
       secret: env('TOKEN_SECRET'),
       cronSecret: env('CRON_SECRET'),
+      admins,
       async laerer(authorization) {
-        // Elevkald sender projektets offentlige nøgle; kun en rigtig brugersession er en lærer.
+        // Kun en rigtig brugersession (Google-login) tæller; lærerlisten tjekkes i api.ts.
         const jwt = authorization?.replace(/^Bearer\s+/i, '');
         if (!jwt) return null;
         const { data: u } = await db.auth.getUser(jwt);
         const email = u.user?.email?.toLowerCase();
-        if (!u.user || !email || !laererMails.includes(email)) return null;
+        if (!u.user || !email) return null;
         return { id: u.user.id, email };
       },
     }, {

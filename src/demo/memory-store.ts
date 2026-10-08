@@ -1,5 +1,5 @@
 import type { Aendring, SpillerRettelse, Store } from '../../supabase/functions/_shared/store.ts';
-import type { Game, Holding, Order, Player, Snapshot } from '../../supabase/functions/_shared/types.ts';
+import type { Game, Holding, Order, Player, Snapshot, Teacher } from '../../supabase/functions/_shared/types.ts';
 
 const kopi = <T>(x: T): T => structuredClone(x);
 
@@ -11,17 +11,18 @@ export class MemoryStore implements Store {
   cache = new Map<string, { data: unknown; fetchedAt: number }>();
   snaps: Snapshot[] = [];
   state = new Map<string, string>();
+  teacherRows: Teacher[] = [];
 
   /** Til demo-tilstanden: gem/indlæs hele databasen som JSON. */
   dump(): string {
     return JSON.stringify({
       games: this.games, playerRows: this.playerRows, holdingRows: this.holdingRows, orderRows: this.orderRows,
-      snaps: this.snaps, state: [...this.state],
+      snaps: this.snaps, state: [...this.state], teacherRows: this.teacherRows,
     });
   }
   load(json: string) {
     const x = JSON.parse(json);
-    Object.assign(this, { ...x, state: new Map(x.state) });
+    Object.assign(this, { teacherRows: [], ...x, state: new Map(x.state) });
   }
 
   async game(id: string) { return kopi(this.games.find((g) => g.id === id) ?? null); }
@@ -80,6 +81,11 @@ export class MemoryStore implements Store {
       if (i >= 0) this.snaps[i] = kopi(r); else this.snaps.push(kopi(r));
     }
   }
+
+  async teachers() { return kopi(this.teacherRows).sort((a, b) => a.email.localeCompare(b.email)); }
+  async teacher(email: string) { return kopi(this.teacherRows.find((t) => t.email === email) ?? null); }
+  async addTeacher(t: Teacher) { if (!this.teacherRows.some((x) => x.email === t.email)) this.teacherRows.push(kopi(t)); }
+  async removeTeacher(email: string) { this.teacherRows = this.teacherRows.filter((t) => t.email !== email); }
 
   async stateGet(key: string) { return this.state.get(key) ?? null; }
   async stateSet(key: string, value: string) { this.state.set(key, value); }

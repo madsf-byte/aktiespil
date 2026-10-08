@@ -1,5 +1,5 @@
 // Datalaget som grænseflade. SupabaseStore bruges i produktion, MemoryStore i tests.
-import type { Game, Holding, Order, Player, Snapshot } from './types.ts';
+import type { Game, Holding, Order, Player, Snapshot, Teacher } from './types.ts';
 
 /** Samlet ændring af én spillers kontanter, beholdning og ordrer – gemmes atomart. */
 export interface Aendring {
@@ -47,6 +47,12 @@ export interface Store {
 
   snapshots(playerId: string): Promise<Snapshot[]>;
   upsertSnapshots(rows: Snapshot[]): Promise<void>;
+
+  /** Lærere godkendt af en administrator (små bogstaver). */
+  teachers(): Promise<Teacher[]>;
+  teacher(email: string): Promise<Teacher | null>;
+  addTeacher(t: Teacher): Promise<void>;
+  removeTeacher(email: string): Promise<void>;
 
   stateGet(key: string): Promise<string | null>;
   stateSet(key: string, value: string): Promise<void>;

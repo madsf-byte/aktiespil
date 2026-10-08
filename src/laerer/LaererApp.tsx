@@ -3,6 +3,7 @@ import { DEMO, Fejl, kald, supabase } from '../api.ts';
 import { tidspunkt } from '../../supabase/functions/_shared/format.ts';
 import { danskDato } from '../../supabase/functions/_shared/tid.ts';
 import type { Game } from '../typer.ts';
+import { Laerere } from './Laerere.tsx';
 import { Besked, Indlaeser, Logo, useHent } from '../ui/faelles.tsx';
 import { SatserFelter, STANDARD, type SatserTekst, tilSatser } from './SatserFelter.tsx';
 import { SpilSide } from './SpilSide.tsx';
@@ -47,13 +48,40 @@ export function LaererApp({ spilId }: { spilId: string | null }) {
       </div>
     );
   }
+  return <Indlogget spilId={spilId} logUd={logUd} />;
+}
+
+interface LaererInfo { email: string; admin: boolean; adgang: boolean }
+
+function Indlogget({ spilId, logUd }: { spilId: string | null; logUd: () => void }) {
+  const info = useHent(() => kald<LaererInfo>('laerer-info'), []);
   return (
     <div class="side bred">
       <div class="top">
         <a href="#/laerer" style={{ textDecoration: 'none', color: 'inherit' }}><Logo /></a>
-        <button class="linkknap" onClick={logUd}>Log ud</button>
+        <div class="knapper" style={{ alignItems: 'center', gap: 16 }}>
+          {info.data?.admin && <a href="#/laerer/laerere">Lærere</a>}
+          <span class="svag lille">{info.data?.email}</span>
+          <button class="linkknap" onClick={logUd}>Log ud</button>
+        </div>
       </div>
-      {spilId ? <SpilSide id={spilId} /> : <Oversigt logUd={logUd} />}
+      <Indlaeser h={info}>
+        {() => {
+          const i = info.data!;
+          if (!i.adgang) {
+            return (
+              <div class="kort" style={{ maxWidth: 520 }}>
+                <h1>Ingen adgang endnu</h1>
+                <p>Du er logget ind som <strong>{i.email}</strong>, men kontoen er ikke godkendt som lærer.</p>
+                <p>Bed en administrator om at tilføje din mailadresse, og log så ind igen.</p>
+                <button class="knap" onClick={logUd}>Log ud</button>
+              </div>
+            );
+          }
+          if (spilId === 'laerere' && i.admin) return <Laerere mig={i.email} />;
+          return spilId ? <SpilSide id={spilId} /> : <Oversigt logUd={logUd} />;
+        }}
+      </Indlaeser>
     </div>
   );
 }
@@ -66,7 +94,7 @@ function Oversigt({ logUd }: { logUd: () => void }) {
   if (spil.fejl && !spil.data) {
     return (
       <Besked type="fejl">
-        {spil.fejl.includes('logge ind som lærer') ? 'Din konto har ikke adgang som lærer.' : spil.fejl}{' '}
+        {spil.fejl}{' '}
         <button class="linkknap" onClick={logUd}>Log ud</button>
       </Besked>
     );

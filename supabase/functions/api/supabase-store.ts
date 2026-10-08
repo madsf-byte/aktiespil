@@ -1,6 +1,6 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import type { Aendring, SpillerRettelse, Store } from '../_shared/store.ts';
-import type { Game, Holding, Order, Player, Snapshot } from '../_shared/types.ts';
+import type { Game, Holding, Order, Player, Snapshot, Teacher } from '../_shared/types.ts';
 
 function ok<T>(r: { data: T; error: unknown }): T {
   if (r.error) throw r.error;
@@ -89,6 +89,11 @@ export class SupabaseStore implements Store {
       .map((s: Snapshot) => ({ ...s, value: Number(s.value) }));
   }
   async upsertSnapshots(rows: Snapshot[]) { ok(await this.db.from('snapshots').upsert(rows)); }
+
+  async teachers() { return ok(await this.db.from('teachers').select('*').order('email')) ?? []; }
+  async teacher(email: string) { return ok(await this.db.from('teachers').select('*').eq('email', email).maybeSingle()); }
+  async addTeacher(t: Teacher) { ok(await this.db.from('teachers').upsert(t, { onConflict: 'email', ignoreDuplicates: true })); }
+  async removeTeacher(email: string) { ok(await this.db.from('teachers').delete().eq('email', email)); }
 
   async stateGet(key: string) {
     return ok(await this.db.from('app_state').select('value').eq('key', key).maybeSingle())?.value ?? null;

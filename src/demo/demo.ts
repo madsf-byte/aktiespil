@@ -95,6 +95,7 @@ const now = () => Date.now() / 1000;
 const deps = {
   store, now, kurser: new Kurser(store, demoKilde, now), secret: 'demo', cronSecret: 'demo',
   laerer: async (a: string | null) => (a ? { id: 'demo-laerer', email: 'demo@skole.dk' } : null),
+  admins: ['demo@skole.dk'],
 };
 
 // Planlæggeren kører hvert minut i demoen.

@@ -85,6 +85,12 @@ export interface Order {
   reason: string | null;
 }
 
+export interface Teacher {
+  email: string;
+  added_by: string;
+  created_at: string;
+}
+
 export interface Snapshot {
   player_id: string;
   day: string;

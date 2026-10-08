@@ -13,8 +13,10 @@ export { ApiFejl };
 export interface Deps extends Motor {
   secret: string;
   cronSecret: string;
-  /** Lærer ud fra Authorization-headeren, eller null. */
+  /** Den indloggede bruger (Supabase Auth) ud fra Authorization-headeren, eller null. */
   laerer(authorization: string | null): Promise<{ id: string; email: string } | null>;
+  /** Administratorer (små bogstaver) – må altid oprette spil og styrer lærerlisten. */
+  admins: string[];
 }
 
 export interface Kald {
@@ -105,6 +107,30 @@ export async function haandter(d: Deps, k: Kald): Promise<unknown> {
     }
 
     // ---------- Lærer ----------
+    case 'laerer-info': {
+      const u = await d.laerer(k.authorization);
+      if (!u) throw new ApiFejl('Du skal logge ind som lærer.', 401);
+      const admin = d.admins.includes(u.email);
+      return { email: u.email, admin, adgang: admin || !!await d.store.teacher(u.email) };
+    }
+    case 'laerere': {
+      await admin(d, k);
+      return d.store.teachers();
+    }
+    case 'tilfoej-laerer': {
+      const a = await admin(d, k);
+      const email = str(b.email, 'E-mail', 200).toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiFejl('Det ligner ikke en e-mailadresse.');
+      await d.store.addTeacher({ email, added_by: a.email, created_at: new Date(d.now() * 1000).toISOString() });
+      return d.store.teachers();
+    }
+    case 'fjern-laerer': {
+      await admin(d, k);
+      const email = str(b.email, 'E-mail', 200).toLowerCase();
+      if (d.admins.includes(email)) throw new ApiFejl('En administrator kan ikke fjernes her.');
+      await d.store.removeTeacher(email);
+      return d.store.teachers();
+    }
     case 'mine-spil': {
       const l = await laerer(d, k);
       return d.store.gamesByOwner(l.id);
@@ -202,6 +228,16 @@ async function login(d: Deps, b: Record<string, any>) {
 async function laerer(d: Deps, k: Kald) {
   const l = await d.laerer(k.authorization);
   if (!l) throw new ApiFejl('Du skal logge ind som lærer.', 401);
+  if (!d.admins.includes(l.email) && !await d.store.teacher(l.email)) {
+    throw new ApiFejl('Din konto har ikke adgang endnu – bed en administrator om at tilføje dig.', 403);
+  }
+  return l;
+}
+
+async function admin(d: Deps, k: Kald) {
+  const l = await d.laerer(k.authorization);
+  if (!l) throw new ApiFejl('Du skal logge ind som lærer.', 401);
+  if (!d.admins.includes(l.email)) throw new ApiFejl('Kun administratorer kan styre lærerlisten.', 403);
   return l;
 }
 

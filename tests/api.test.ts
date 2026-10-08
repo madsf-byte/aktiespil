@@ -42,6 +42,10 @@ let store: MemoryStore;
 let kilde: FakeKilde;
 let d: Deps;
 let laererToken: string | null;
+const BRUGERE: Record<string, { id: string; email: string }> = {
+  'Bearer laerer': { id: 'L1', email: 'l@x.dk' },
+  'Bearer kollega': { id: 'L2', email: 'kollega@naae.dk' },
+};
 
 const kald = (action: string, body: Record<string, any> = {}) =>
   haandter(d, { action, body, authorization: laererToken, cronSecret: null }) as Promise<any>;
@@ -67,7 +71,8 @@ beforeEach(() => {
   d = {
     store, now: () => tid, secret: 'hemmelig', cronSecret: 'cron',
     kurser: new Kurser(store, kilde, () => tid),
-    laerer: async (a) => (a === 'Bearer laerer' ? { id: 'L1', email: 'l@x.dk' } : null),
+    laerer: async (a) => BRUGERE[a ?? ''] ?? null,
+    admins: ['l@x.dk'],
   };
 });
 
@@ -107,6 +112,36 @@ describe('tilmelding og login', () => {
     const g = await nytSpil();
     laererToken = 'Bearer anden';
     expect(await fejl(kald('spil', { id: g.id }))).toMatch(/logge ind som lærer/);
+  });
+});
+
+describe('lærerliste', () => {
+  it('en ikke-godkendt lærer får besked, og administratoren kan give adgang', async () => {
+    laererToken = 'Bearer kollega';
+    expect(await kald('laerer-info')).toEqual({ email: 'kollega@naae.dk', admin: false, adgang: false });
+    expect(await fejl(kald('mine-spil'))).toMatch(/ikke adgang endnu/);
+    expect(await fejl(kald('tilfoej-laerer', { email: 'kollega@naae.dk' }))).toMatch(/Kun administratorer/);
+
+    laererToken = 'Bearer laerer';
+    expect((await kald('laerer-info')).admin).toBe(true);
+    const liste = await kald('tilfoej-laerer', { email: ' Kollega@NAAE.dk ' });
+    expect(liste.map((t: any) => t.email)).toEqual(['kollega@naae.dk']);
+    expect(await fejl(kald('tilfoej-laerer', { email: 'ikke-en-mail' }))).toMatch(/ligner ikke/);
+    expect(await fejl(kald('fjern-laerer', { email: 'l@x.dk' }))).toMatch(/administrator kan ikke fjernes/);
+
+    laererToken = 'Bearer kollega';
+    expect((await kald('laerer-info')).adgang).toBe(true);
+    const g = await nytSpil();
+    expect((await kald('mine-spil')).map((x: Game) => x.id)).toEqual([g.id]);
+
+    // Hver lærer ser kun egne spil.
+    laererToken = 'Bearer laerer';
+    expect(await kald('mine-spil')).toEqual([]);
+    expect(await fejl(kald('spil', { id: g.id }))).toMatch(/findes ikke/);
+
+    await kald('fjern-laerer', { email: 'kollega@naae.dk' });
+    laererToken = 'Bearer kollega';
+    expect(await fejl(kald('mine-spil'))).toMatch(/ikke adgang endnu/);
   });
 });
 
