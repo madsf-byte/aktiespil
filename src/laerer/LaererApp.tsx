@@ -16,7 +16,11 @@ export function LaererApp({ spilId }: { spilId: string | null }) {
     if (DEMO) { setSession(localStorage.getItem('aktiespil.demo-laerer') ? 'inde' : 'ude'); return; }
     let sb;
     try { sb = supabase(); } catch { setSession('ude'); return; }
-    sb.auth.getSession().then(({ data }) => setSession(data.session ? 'inde' : 'ude'));
+    sb.auth.getSession().then(({ data }) => {
+      // Fjern ?code=… fra adressen, når login er gjort færdigt.
+      if (new URLSearchParams(location.search).has('code')) history.replaceState(null, '', `${location.pathname}#/laerer`);
+      setSession(data.session ? 'inde' : 'ude');
+    });
     const { data } = sb.auth.onAuthStateChange((_e, s) => setSession(s ? 'inde' : 'ude'));
     return () => data.subscription.unsubscribe();
   }, []);
@@ -25,7 +29,7 @@ export function LaererApp({ spilId }: { spilId: string | null }) {
     if (DEMO) { localStorage.setItem('aktiespil.demo-laerer', 'demo'); setSession('inde'); return; }
     await supabase().auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${location.origin}${location.pathname}#/laerer` },
+      options: { redirectTo: `${location.origin}${location.pathname}` },
     });
   }
   async function logUd() {

@@ -15,7 +15,8 @@ export class Fejl extends Error {
 let supa: SupabaseClient | null = null;
 export function supabase(): SupabaseClient {
   if (!URL || !KEY) throw new Fejl('Appen mangler opsætning (Supabase).', 500);
-  supa ??= createClient(URL, KEY);
+  // PKCE: login-svaret kommer som ?code=… og rører ikke #-delen, som appen bruger til sider.
+  supa ??= createClient(URL, KEY, { auth: { flowType: 'pkce', detectSessionInUrl: true } });
   return supa;
 }
 

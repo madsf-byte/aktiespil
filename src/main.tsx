@@ -16,9 +16,12 @@ function useHash() {
 }
 
 /** #/ elev · #/k/KODE tilmelding med kode · #/laerer · #/laerer/<spil-id> */
+/** Tilbage fra Google-login (?code=…): vis lærersiden, så login gøres færdigt. */
+const efterLogin = () => new URLSearchParams(location.search).has('code');
+
 function App() {
   const hash = useHash();
-  const dele = hash.replace(/^#\/?/, '').split('/');
+  const dele = efterLogin() ? ['laerer'] : hash.replace(/^#\/?/, '').split('/');
   return (
     <>
       {DEMO && <div class="demo-baand">Demo – kurserne er opdigtede, og alt gemmes kun i denne browser.</div>}
