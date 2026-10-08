@@ -2,8 +2,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const DEMO = import.meta.env.VITE_DEMO === '1';
-const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Offentlige værdier – beregnet til at ligge i browseren. Kan overskrives med VITE_-variabler.
+const URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || 'https://caehqnmemkbuyiujxeei.supabase.co';
+const KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || 'sb_publishable_KugLZCtwPJhDZ9ivRwYOOQ_0kh1M3d8';
 
 export class Fejl extends Error {
   constructor(message: string, public status: number) {

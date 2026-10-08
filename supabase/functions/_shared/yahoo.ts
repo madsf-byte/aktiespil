@@ -1,5 +1,6 @@
 // Kursleverandør: Yahoo Finance (uofficielt API). Kan udskiftes – resten af koden kender kun KursKilde.
-// NB: Send ikke en browser-User-Agent; Yahoo afviser forespørgsler der udgiver sig for at være Chrome.
+// NB: Yahoo afviser nogle standard-User-Agents (fx Deno's og falske Chrome fra Node) med 429,
+// men accepterer en ærlig, egen User-Agent – både fra Supabase og lokalt.
 import type { ChartPoint, Quote, SearchHit } from './types.ts';
 
 export interface KursKilde {
@@ -21,6 +22,7 @@ export interface Split {
 export class KursFejl extends Error {}
 
 const BASE = 'https://query2.finance.yahoo.com';
+const UA = 'Mozilla/5.0 (compatible; Aktiespil/1.0)';
 
 /** Valutaer der noteres i underenhed (pence, cent, agorot). */
 const UNDERENHED: Record<string, string> = { GBp: 'GBP', GBX: 'GBP', ZAc: 'ZAR', ILA: 'ILS' };
@@ -28,7 +30,7 @@ const UNDERENHED: Record<string, string> = { GBp: 'GBP', GBX: 'GBP', ZAc: 'ZAR',
 async function hent(url: string): Promise<any> {
   let res: Response;
   try {
-    res = await fetch(url, { headers: { Accept: 'application/json' } });
+    res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': UA }, signal: AbortSignal.timeout(10000) });
   } catch {
     throw new KursFejl('Kursen kunne ikke hentes – prøv igen om lidt.');
   }

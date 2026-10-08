@@ -21,6 +21,5 @@ npm run dev:demo   # hele appen i browseren med opdigtede kurser – ingen Supab
 2. `npx supabase db push`
 3. `npx supabase secrets set TOKEN_SECRET=… CRON_SECRET=… TEACHER_EMAILS=lærer@skole.dk`
 4. `npx supabase functions deploy api --use-api`
-5. Kør `supabase/cron.sql` (med dine værdier) i SQL Editor.
+5. Planlæggeren (migration `…_cron.sql`) læser `cron_secret` fra Vault: `select vault.create_secret('<CRON_SECRET>', 'cron_secret')`.
 6. Auth → Providers → Google (klient-id og -hemmelighed fra Google Cloud). Auth → URL Configuration: tilføj appens adresse.
-7. GitHub → Settings → Variables: `SUPABASE_URL` og `SUPABASE_ANON_KEY`.
