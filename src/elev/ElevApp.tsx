@@ -64,7 +64,7 @@ function Spil({ logUd }: { logUd: () => void }) {
                 <SpilStatus m={m} />
                 {fane === 'portefolje' && <Portefolje m={m} vaelg={setAktie} />}
                 {fane === 'handl' && <Handl m={m} vaelg={setAktie} />}
-                {fane === 'rangliste' && <Rangliste mig={m.player.id} vaelgAktie={setAktie} />}
+                {fane === 'rangliste' && <Rangliste mig={m.player.id} startCapital={m.game.start_capital} vaelgAktie={setAktie} />}
                 {fane === 'historik' && <Historik />}
               </>
             );

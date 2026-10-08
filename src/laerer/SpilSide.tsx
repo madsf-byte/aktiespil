@@ -8,6 +8,7 @@ import { OrdreLinje } from '../elev/Historik.tsx';
 import { PositionsListe } from '../elev/ElevApp.tsx';
 import type { Game, LaererRaekke, SpilSvar } from '../typer.ts';
 import { Besked, Indlaeser, Udvikling, useHent } from '../ui/faelles.tsx';
+import { KlasseTotal } from '../ui/KlasseTotal.tsx';
 import { fraSatser, SatserFelter, tilSatser } from './SatserFelter.tsx';
 
 export function SpilSide({ id }: { id: string }) {
@@ -66,6 +67,7 @@ function Elever({ rows, game, opdater }: { rows: LaererRaekke[]; game: Game; opd
   return (
     <section>
       <h2>Rangliste og elever</h2>
+      <KlasseTotal vaerdier={rows.map((r) => r.value)} startCapital={game.start_capital} />
       {rows.length === 0 && <p class="svag">Ingen elever endnu. Vis klassekoden eller QR-koden for klassen.</p>}
       {rows.length > 0 && (
         <section class="kort flad">

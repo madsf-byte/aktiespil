@@ -4,8 +4,9 @@ import { kr } from '../../supabase/functions/_shared/format.ts';
 import type { RanglisteSvar, Spiller, Vaerdi } from '../typer.ts';
 import { Indlaeser, Udvikling, useHent } from '../ui/faelles.tsx';
 import { PositionsListe } from './ElevApp.tsx';
+import { KlasseTotal } from '../ui/KlasseTotal.tsx';
 
-export function Rangliste({ mig, vaelgAktie }: { mig: string; vaelgAktie: (s: string) => void }) {
+export function Rangliste({ mig, startCapital, vaelgAktie }: { mig: string; startCapital: number; vaelgAktie: (s: string) => void }) {
   const r = useHent(() => elevKald<RanglisteSvar>('rangliste'), []);
   const [valgt, setValgt] = useState<string | null>(null);
 
@@ -18,6 +19,8 @@ export function Rangliste({ mig, vaelgAktie }: { mig: string; vaelgAktie: (s: st
         {() => (
           <>
             {r.data!.finished && <p><strong>🏆 Spillet er slut – her er den endelige stilling.</strong></p>}
+            <KlasseTotal vaerdier={r.data!.rows.map((x) => x.value)} startCapital={startCapital} />
+            <h2>Elever</h2>
             <section class="kort flad">
               <ul class="liste">
                 {r.data!.rows.map((x, i) => (
