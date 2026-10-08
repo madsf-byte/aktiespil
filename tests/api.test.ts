@@ -3,7 +3,7 @@ import { ApiFejl, type Deps, haandter } from '../supabase/functions/_shared/api.
 import { Kurser } from '../supabase/functions/_shared/kurser.ts';
 import type { Game, Order, Quote } from '../supabase/functions/_shared/types.ts';
 import { KursFejl, type KursKilde, type Split } from '../supabase/functions/_shared/yahoo.ts';
-import { MemoryStore } from './memory-store.ts';
+import { MemoryStore } from '../src/demo/memory-store.ts';
 
 const sek = (iso: string) => Date.parse(iso) / 1000;
 // Tirsdag 6. okt. 2026. København åben 07:00–15:00Z, New York 13:30–20:00Z.

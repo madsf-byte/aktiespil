@@ -1,5 +1,5 @@
-import type { Aendring, SpillerRettelse, Store } from '../supabase/functions/_shared/store.ts';
-import type { Game, Holding, Order, Player, Snapshot } from '../supabase/functions/_shared/types.ts';
+import type { Aendring, SpillerRettelse, Store } from '../../supabase/functions/_shared/store.ts';
+import type { Game, Holding, Order, Player, Snapshot } from '../../supabase/functions/_shared/types.ts';
 
 const kopi = <T>(x: T): T => structuredClone(x);
 
@@ -11,6 +11,18 @@ export class MemoryStore implements Store {
   cache = new Map<string, { data: unknown; fetchedAt: number }>();
   snaps: Snapshot[] = [];
   state = new Map<string, string>();
+
+  /** Til demo-tilstanden: gem/indlæs hele databasen som JSON. */
+  dump(): string {
+    return JSON.stringify({
+      games: this.games, playerRows: this.playerRows, holdingRows: this.holdingRows, orderRows: this.orderRows,
+      snaps: this.snaps, state: [...this.state],
+    });
+  }
+  load(json: string) {
+    const x = JSON.parse(json);
+    Object.assign(this, { ...x, state: new Map(x.state) });
+  }
 
   async game(id: string) { return kopi(this.games.find((g) => g.id === id) ?? null); }
   async gameByCode(code: string) { return kopi(this.games.find((g) => g.code === code) ?? null); }
