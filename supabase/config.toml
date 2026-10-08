@@ -1,0 +1,5 @@
+project_id = "aktiespil"
+
+[functions.api]
+# Funktionen tjekker selv elevnøgler og lærer-login.
+verify_jwt = false
